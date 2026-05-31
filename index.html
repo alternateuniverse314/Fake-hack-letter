@@ -11,15 +11,17 @@
             box-sizing: border-box;
         }
 
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #b4b4b4 0%, #764ba2 100%);
             padding: 20px;
         }
+
 
         .container {
             background: white;
@@ -31,13 +33,16 @@
             text-align: center;
         }
 
+
         .letter-container {
             display: none;
         }
 
+
         .letter-container.active {
             display: block;
         }
+
 
         .letter-envelope {
             background: #f9f9f9;
@@ -46,6 +51,7 @@
             padding: 30px;
             margin-bottom: 30px;
         }
+
 
         .letter-subject {
             font-size: 28px;
@@ -58,6 +64,7 @@
             align-items: center;
             justify-content: center;
         }
+
 
         .open-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -72,28 +79,34 @@
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
 
+
         .open-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
         }
 
+
         .open-btn:active {
             transform: translateY(0);
         }
+
 
         .instructions-container {
             display: none;
         }
 
+
         .instructions-container.active {
             display: block;
         }
+
 
         .instructions-container h1 {
             font-size: 32px;
             color: #333;
             margin-bottom: 30px;
         }
+
 
         .instructions-container h2 {
             font-size: 20px;
@@ -103,6 +116,7 @@
             text-align: left;
         }
 
+
         .instructions-container p {
             font-size: 16px;
             color: #666;
@@ -110,6 +124,7 @@
             text-align: left;
             line-height: 1.6;
         }
+
 
         .code-block {
             background: #f4f4f4;
@@ -123,6 +138,7 @@
             color: #333;
         }
 
+
         .example {
             background: #e8f4f8;
             border-left: 4px solid #764ba2;
@@ -133,9 +149,11 @@
             color: #333;
         }
 
+
         .example strong {
             color: #764ba2;
         }
+
 
         .step {
             background: #fff9e6;
@@ -145,9 +163,37 @@
             border-radius: 5px;
             text-align: left;
         }
+
+
+        /* Fullscreen iframe styles */
+        #fullscreenFrame {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            border: none;
+            z-index: 9999;
+        }
+
+
+        #fullscreenFrame.active {
+            display: block;
+        }
+
+
+        /* Hide everything else when iframe is active */
+        .hide-on-fullscreen {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
+    <!-- Fullscreen iframe for hack.html -->
+    <iframe id="fullscreenFrame" src="hack.html"></iframe>
+
+
     <div class="container">
         <!-- Letter Display -->
         <div class="letter-container" id="letterContainer">
@@ -157,6 +203,7 @@
             <button class="open-btn" onclick="openLetter()">Open Letter</button>
         </div>
 
+
         <!-- Instructions -->
         <div class="instructions-container" id="instructionsContainer">
             <h1>📧 Create Your Prank Letter</h1>
@@ -164,21 +211,26 @@
             <h2>How It Works:</h2>
             <p>Create a custom URL that displays a fake letter. When someone opens it, they'll get a surprise!</p>
 
+
             <div class="step">
                 <strong>Step 1:</strong> Add a <code>?text=</code> parameter to the URL with your custom message
             </div>
+
 
             <div class="code-block">
                 https://alternateuniverse314.github.io/Fake-hack-letter/?text=You Won A Prize!
             </div>
 
+
             <div class="step">
                 <strong>Step 2:</strong> Share the link with someone
             </div>
 
+
             <div class="step">
                 <strong>Step 3:</strong> When they click it, they see your custom message as a letter subject
             </div>
+
 
             <h2>Example:</h2>
             <div class="example">
@@ -188,6 +240,7 @@
                 <strong>Result:</strong> Shows a letter with the subject "You Won A Prize!" and an "Open Letter" button that the repient will think will open the message/letter but it reveals the prank.
             </div>
 
+
             <h2>More Examples:</h2>
             <ul style="text-align: left; margin: 20px 0;">
                 <li><code>?text=Your account has been compromised</code></li>
@@ -196,11 +249,13 @@
                 <li><code>?text=Let's play a game!</code></li>
             </ul>
 
+
             <p style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #eee;">
                 <strong>Have fun pranking responsibly!</strong>
             </p>
         </div>
     </div>
+
 
     <script>
         // Get URL parameters
@@ -209,8 +264,10 @@
             return urlParams.get(param);
         }
 
+
         // Get text parameter
         const letterText = getQueryParam('text');
+
 
         // Initialize page
         if (letterText) {
@@ -225,9 +282,30 @@
             document.getElementById('instructionsContainer').classList.add('active');
         }
 
-        // Open letter function
+
+        // Open letter function - goes fullscreen and shows hack.html as embed
         function openLetter() {
-            window.location.href = 'hack.html';
+            // Request fullscreen on the document
+            const docEl = document.documentElement;
+            const requestFullscreen = docEl.requestFullscreen || 
+                                      docEl.webkitRequestFullscreen || 
+                                      docEl.mozRequestFullScreen || 
+                                      docEl.msRequestFullscreen;
+            
+            if (requestFullscreen) {
+                requestFullscreen.call(docEl);
+            }
+            
+            // Show the iframe with hack.html and hide everything else
+            const iframe = document.getElementById('fullscreenFrame');
+            const container = document.querySelector('.container');
+            
+            iframe.classList.add('active');
+            container.classList.add('hide-on-fullscreen');
+            
+            // Also hide body background
+            document.body.style.background = 'none';
+            document.body.style.backgroundColor = 'transparent';
         }
     </script>
 </body>
