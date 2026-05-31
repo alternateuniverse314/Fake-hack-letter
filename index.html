@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Letter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .letter-container {
+            display: none;
+        }
+
+        .letter-container.active {
+            display: block;
+        }
+
+        .letter-envelope {
+            background: #f9f9f9;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .letter-subject {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            word-break: break-word;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .open-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .open-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .open-btn:active {
+            transform: translateY(0);
+        }
+
+        .instructions-container {
+            display: none;
+        }
+
+        .instructions-container.active {
+            display: block;
+        }
+
+        .instructions-container h1 {
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .instructions-container h2 {
+            font-size: 20px;
+            color: #555;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .instructions-container p {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 15px;
+            text-align: left;
+            line-height: 1.6;
+        }
+
+        .code-block {
+            background: #f4f4f4;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            text-align: left;
+            border-radius: 5px;
+            overflow-x: auto;
+            color: #333;
+        }
+
+        .example {
+            background: #e8f4f8;
+            border-left: 4px solid #764ba2;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            text-align: left;
+            color: #333;
+        }
+
+        .example strong {
+            color: #764ba2;
+        }
+
+        .step {
+            background: #fff9e6;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Letter Display -->
+        <div class="letter-container" id="letterContainer">
+            <div class="letter-envelope">
+                <div class="letter-subject" id="letterSubject"></div>
+            </div>
+            <button class="open-btn" onclick="openLetter()">Open Letter</button>
+        </div>
+
+        <!-- Instructions -->
+        <div class="instructions-container" id="instructionsContainer">
+            <h1>📧 Create Your Prank Letter</h1>
+            
+            <h2>How It Works:</h2>
+            <p>Create a custom URL that displays a fake letter. When someone opens it, they'll get a surprise!</p>
+
+            <div class="step">
+                <strong>Step 1:</strong> Add a <code>?text=</code> parameter to the URL with your custom message
+            </div>
+
+            <div class="code-block">
+                https://yoursite.com/index.html?text=You've Been Hacked!
+            </div>
+
+            <div class="step">
+                <strong>Step 2:</strong> Share the link with someone
+            </div>
+
+            <div class="step">
+                <strong>Step 3:</strong> When they click it, they see your custom message as a letter subject
+            </div>
+
+            <h2>Example:</h2>
+            <div class="example">
+                <strong>URL:</strong> <br>
+                <code>index.html?text=Check your system immediately!</code>
+                <br><br>
+                <strong>Result:</strong> Shows a letter with the subject "Check your system immediately!" and an "Open Letter" button that reveals the prank.
+            </div>
+
+            <h2>More Examples:</h2>
+            <ul style="text-align: left; margin: 20px 0;">
+                <li><code>?text=Your account has been compromised</code></li>
+                <li><code>?text=Urgent: Security alert</code></li>
+                <li><code>?text=Click if you dare!</code></li>
+                <li><code>?text=You've won a prize!</code></li>
+            </ul>
+
+            <p style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #eee;">
+                <strong>Have fun pranking responsibly! 😄</strong>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Get URL parameters
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        // Get text parameter
+        const letterText = getQueryParam('text');
+
+        // Initialize page
+        if (letterText) {
+            // Show letter mode
+            document.getElementById('letterContainer').classList.add('active');
+            document.getElementById('instructionsContainer').classList.remove('active');
+            document.getElementById('letterSubject').textContent = letterText;
+            document.title = letterText;
+        } else {
+            // Show instructions mode
+            document.getElementById('letterContainer').classList.remove('active');
+            document.getElementById('instructionsContainer').classList.add('active');
+        }
+
+        // Open letter function
+        function openLetter() {
+            window.location.href = 'hack.html';
+        }
+    </script>
+</body>
+</html>
