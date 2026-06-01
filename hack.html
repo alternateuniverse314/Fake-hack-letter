@@ -3,386 +3,536 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hacking...</title>
+  <title>remote shell - session 01</title>
   <style>
-  :root {
-    --bg: #000;
-    --green: #00ff66;
-    --dim: rgba(0, 255, 102, 0.6);
-    --red: #ff4d4d;
-    --yellow: #ffd700;
-    --font: "Courier New", "Source Code Pro", monospace;
-  }
+    :root {
+      --page-bg: #020403;
+      --terminal-bg: #060806;
+      --terminal-bg-2: #0b100c;
+      --terminal-border: #26352b;
+      --title-bg: #151815;
+      --title-fg: #a9b3aa;
+      --text: #d8ddd8;
+      --green: #8ef0a4;
+      --green-soft: #6ecb84;
+      --muted: #7e8c80;
+      --warn: #f2c66d;
+      --error: #ff8787;
+      --blue: #83b7ff;
+      --font: "Consolas", "Courier New", monospace;
+    }
 
-  html, body {
-    margin: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background: var(--bg);
-    color: var(--green);
-    font-family: var(--font);
-    font-size: 14px;
-    letter-spacing: 0.3px;
-  }
+    * {
+      box-sizing: border-box;
+    }
 
-  .scanlines {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-      0deg,
-      rgba(0, 255, 102, 0.05) 0px,
-      rgba(0, 255, 102, 0.05) 2px,
-      transparent 2px,
-      transparent 4px
-    );
-    mix-blend-mode: screen;
-    animation: flicker 0.1s infinite alternate;
-  }
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+    }
 
-  @keyframes flicker {
-    from { opacity: 0.85; }
-    to   { opacity: 1; }
-  }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(58, 91, 62, 0.16), transparent 34%),
+        var(--page-bg);
+      color: var(--text);
+      font-family: var(--font);
+      letter-spacing: 0;
+      overflow: hidden;
+    }
 
-  .wrap {
-    box-sizing: border-box;
-    width: 100%;
-    height: 100%;
-    padding: 16px 18px;
-    display: flex;
-    flex-direction: column;
-  }
+    .terminal-window {
+      width: min(980px, 100%);
+      border: 1px solid var(--terminal-border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--terminal-bg);
+      box-shadow:
+        0 24px 70px rgba(0, 0, 0, 0.66),
+        0 0 0 1px rgba(142, 240, 164, 0.04) inset;
+    }
 
-  .banner {
-    font-size: 36px;
-    font-weight: 700;
-    margin-bottom: 6px;
-    letter-spacing: 2px;
-    text-shadow: 0 0 10px var(--green);
-  }
+    .title-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 36px;
+      padding: 0 11px;
+      background: linear-gradient(180deg, #1b1e1b, var(--title-bg));
+      border-bottom: 1px solid var(--terminal-border);
+      color: var(--title-fg);
+      font-size: 13px;
+      user-select: none;
+    }
 
-  .alert-card {
-    background: rgba(0, 0, 0, 0.85);
-    padding: 10px;
-    border: 1px solid rgba(255, 77, 77, 0.55);
-    border-radius: 5px;
-    margin-top: 2px;
-    box-shadow: 0 0 8px rgba(255, 77, 77, 0.25);
-  }
+    .window-left,
+    .window-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
 
-  .alert-yellow {
-    border-color: rgba(255, 215, 0, 0.5);
-    box-shadow: 0 0 8px rgba(255, 215, 0, 0.25);
-  }
+    .window-buttons {
+      display: flex;
+      gap: 7px;
+      flex: 0 0 auto;
+    }
 
-  .status {
-    color: var(--dim);
-    margin-bottom: 8px;
-    font-size: 17px;
-  }
+    .window-button {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 1px solid rgba(0, 0, 0, 0.38);
+    }
 
-  .scanner {
-    margin-top: 10px;
-    height: 28px;
-    background: rgba(0, 0, 0, 0.9);
-    border: 1px solid rgba(0, 255, 102, 0.5);
-    padding: 3px;
-    box-shadow: 0 0 7px rgba(0, 255, 102, 0.2);
-    white-space: nowrap;
-    overflow: hidden;
-  }
+    .close {
+      background: #ff5f57;
+    }
 
-  .scan-text {
-    display: inline-block;
-    color: var(--yellow);
-    font-size: 16px;
-    animation: scroll-scan 9s linear infinite;
-  }
+    .minimize {
+      background: #febc2e;
+    }
 
-  @keyframes scroll-scan {
-    0%   { transform: translateX(100%); }
-    100% { transform: translateX(-200%); }
-  }
+    .zoom {
+      background: #28c840;
+    }
 
-  .terminal {
-    flex: 1;
-    max-height: 53vh;
-    overflow-y: auto;
-    padding: 10px;
-    border: 1px solid rgba(0, 255, 102, 0.4);
-    background: rgba(0, 0, 0, 0.85);
-    box-shadow: 0 0 9px rgba(0, 255, 102, 0.25);
-    line-height: 1.55;
-    font-size: 14px;
-    margin-top: 10px;
-    white-space: pre-wrap;
-    text-shadow: 0 0 6px rgba(0, 255, 102, 0.35);
-  }
+    .title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
-  .cmd-line {
-    display: flex;
-    align-items: center;
-    margin-top: 6px;
-    color: var(--green);
-    font-size: 15px;
-    padding: 3px 0 0 4px;
-  }
+    .status-light {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green-soft);
+      box-shadow: 0 0 10px rgba(142, 240, 164, 0.82);
+    }
 
-  .prompt {
-    margin-right: 8px;
-  }
+    .status-label {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
 
-  .typed-text {
-    white-space: pre-wrap;
-  }
+    #terminal {
+      position: relative;
+      height: min(76vh, 680px);
+      min-height: 460px;
+      overflow-y: auto;
+      padding: 18px 20px 20px;
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.025) 50%, transparent 50%) 0 0 / 100% 4px,
+        var(--terminal-bg-2);
+      color: var(--text);
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      text-shadow: 0 0 9px rgba(142, 240, 164, 0.11);
+      scrollbar-color: #38513e #0b100c;
+    }
 
-  .cursor {
-    display: inline-block;
-    width: 10px;
-    height: 16px;
-    background: var(--green);
-    margin-left: 4px;
-    animation: blink 0.8s step-end infinite;
-    vertical-align: middle;
-  }
+    #terminal .prompt {
+      color: var(--green);
+    }
 
-  @keyframes blink {
-    50% { opacity: 0; }
-  }
+    #terminal .cont {
+      color: var(--blue);
+    }
 
-  .progress {
-    margin-top: 10px;
-    width: min(480px, 100%);
-    border: 1px solid var(--green);
-    padding: 3px;
-    box-shadow: 0 0 10px rgba(0, 255, 102, 0.25);
-  }
+    #terminal .info {
+      color: var(--muted);
+    }
 
-  .bar {
-    height: 18px;
-    width: 0%;
-    background: linear-gradient(
-      90deg,
-      var(--green) 0%,
-      #b6ff00 50%,
-      var(--green) 100%
-    );
-    animation: load 5.5s linear infinite;
-  }
+    #terminal .ok {
+      color: var(--green-soft);
+    }
 
-  @keyframes load {
-    0%   { width: 2%; }
-    35%  { width: 42%; }
-    65%  { width: 78%; }
-    100% { width: 98%; }
-  }
+    #terminal .warn {
+      color: var(--warn);
+    }
 
-  .bar-text {
-    margin-top: 6px;
-    color: var(--dim);
-    font-size: 12px;
-  }
+    #terminal .error {
+      color: var(--error);
+    }
 
-  .warning {
-    margin-top: 12px;
-    color: var(--red);
-    font-weight: 700;
-    text-shadow: 0 0 8px rgba(255, 77, 77, 0.5);
-  }
+    #terminal .code {
+      color: #b8e7c1;
+    }
 
-  .fake-code {
-    margin-top: 12px;
-    color: rgba(0, 255, 102, 0.7);
-    font-size: 12px;
-  }
+    #terminal .reveal {
+      margin-top: 8px;
+      color: #f5f5f5;
+      font-weight: 700;
+    }
 
-  .prank-hint {
-    margin-top: 8px;
-    font-size: 11px;
-    color: rgba(255, 77, 77, 0.6);
-    text-align: center;
-  }
+    #cursor {
+      display: inline-block;
+      width: 9px;
+      height: 1.14em;
+      margin-left: 2px;
+      background: var(--green);
+      vertical-align: -0.18em;
+      animation: cursor-blink 0.92s steps(1, end) infinite;
+      box-shadow: 0 0 8px rgba(142, 240, 164, 0.52);
+    }
 
-  .prank-btn {
-    display: inline-block;
-    padding: 1px 2px;
-    background: rgba(50, 0, 0, 0.5);
-    color: rgba(65, 65, 65, 0.8);
-    border: 1px solid rgba(54, 53, 53, 0.5);
-    border-radius: 4px;
-    font-family: var(--font);
-    font-size: 6px;
-    cursor: pointer;
-    box-shadow: 0 0 4px rgba(255, 77, 77, 0.3);
-    transition: all 0.2s ease;
-  }
+    @keyframes cursor-blink {
+      50% {
+        opacity: 0;
+      }
+    }
 
-  .prank-btn:hover {
-    background: rgba(70, 0, 0, 0.7);
-    box-shadow: 0 0 6px rgba(255, 77, 77, 0.5);
-  }
-</style>
+    @media (max-width: 700px) {
+      body {
+        padding: 10px;
+      }
+
+      .terminal-window {
+        border-radius: 6px;
+      }
+
+      .window-right {
+        display: none;
+      }
+
+      .title {
+        max-width: 62vw;
+      }
+
+      #terminal {
+        height: 82vh;
+        min-height: 360px;
+        padding: 14px;
+        font-size: 12px;
+      }
+    }
+  </style>
 </head>
-<body tabindex="0"> <!-- so it can receive focus + key events -->
-  <div class="wrap">
-    <div class="banner">SYSTEM COMPROMISED</div>
-
-    <div class="alert-card">
-      <strong style="color:var(--red)">CRITICAL SECURITY BREACH</strong>
-      <br>Remote root shell active from IP: <span style="color:var(--yellow)">185.143.22.194</span>
-      <br>Last login: <span style="color:var(--yellow)">Mon Apr 29 11:52:03 2026</span>
-    </div>
-
-    <div class="alert-card alert-yellow">
-      <strong style="color:var(--yellow)">DECRYPTING ENCRYPTION KEYS</strong>
-      <br>Master partition keys partially recovered.
-      <br>Backup safeties disabled. No rollback path.
-    </div>
-
-    <div class="status">STATUS: SYSTEM INsecure</div>
-
-    <div class="scanner">
-      <div class="scan-text">
-        SCANNING: C:\ • /home • /root • /System/Library • /tmp • Keychain
+<body>
+  <main class="terminal-window" aria-label="remote shell">
+    <div class="title-bar">
+      <div class="window-left">
+        <div class="window-buttons" aria-hidden="true">
+          <span class="window-button close"></span>
+          <span class="window-button minimize"></span>
+          <span class="window-button zoom"></span>
+        </div>
+        <div class="title">remote shell - session 01</div>
+      </div>
+      <div class="window-right" aria-hidden="true">
+        <span class="status-light"></span>
+        <span class="status-label">tty0 / secure console</span>
       </div>
     </div>
 
-    <div class="terminal" id="terminal"></div>
-
-    <div class="cmd-line">
-      <span class="prompt">root@terminal:~# </span>
-      <span class="typed-text" id="typed"></span>
-      <span class="cursor"></span>
-    </div>
-
-    <div class="progress">
-      <div class="bar"></div>
-    </div>
-    <div class="bar-text">DECRYPTION STATUS: IN PROGRESS — 63% UNLOCKED</div>
-
-    <div class="fake-code" id="fake-code"></div>
-
-    <div class="warning">
-      WARNING: ALL DATA IS NOW EXPOSED TO REMOTE HOST
-      <br>WARNING: ADMINISTRATOR PRIVILEGES REVOKED
-    </div>
-
-    <div class="prank-hint" id="prank-area" style="opacity:0; transition:opacity 1.5s;">
-      <button class="prank-btn" id="prank-btn">*</button>
-      Nothing is actually happening. This is just HTML.
-    </div>
-
-    <div class="alert-card" style="margin-top:8px;font-size:6px;">
-      Fake. Hit escape to exit fullscreen.
-    </div>
-  </div>
-
-  <div class="scanlines"></div>
+    <div id="terminal" role="log" aria-live="polite"></div>
+  </main>
 
   <script>
-    function goFullscreen() {
-      const elem = document.documentElement;
-      if (elem.requestFullscreen) {
-        elem.requestFullscreen();
-      } else if (elem.webkitRequestFullscreen) { /* Safari / Chrome */
-        elem.webkitRequestFullscreen();
-      } else if (elem.mozRequestFullScreen) { /* Firefox */
-        elem.mozRequestFullScreen();
-      } else if (elem.msRequestFullscreen) { /* IE/Edge */
-        elem.msRequestFullscreen();
-      }
-    }
-
-    // when the page first gets a key press or click, go fullscreen
-    function onFirstInteraction() {
-      goFullscreen();
-      // remove listeners so it only runs once
-      document.removeEventListener("click", onFirstInteraction);
-      document.removeEventListener("keydown", onFirstInteraction);
-    }
-
-    // add click and key listeners (works in Chrome/Chromium + Firefox)
-    document.addEventListener("click", onFirstInteraction);
-    document.addEventListener("keydown", onFirstInteraction);
-
-    // auto‑focus so the body can receive key events immediately
-    document.body.focus();
-
-    const lines = [
-      "[INFO] 0x5A: Establishing secure tunnel to remote host...",
-      "[INFO] 0x0B: Bypassing firewall (IPv6 encryption not supported)...",
-      "[INFO] 0x2C: Reading user session tokens...",
-      "[INFO] 0x5E: Accessing encrypted vault partition...",
-      "[ALERT] 0xFA: Master key detected. Initiating decryption routine...",
-      "[ALERT] 0x7D: System integrity check failed. 63 anomalies detected.",
-      "[WARN] 0xC1: Recovery partitions locked. Manual override disabled.",
-      "[FAIL] 0x99: Local admin credentials overwritten. User access revoked.",
-      "[ALERT] 0x00: Remote shell opened. All data now accessible...",
-      "[ALERT] 0x11: Backup sync disabled. No rollback possible.",
-      "[ALERT] 0x22: User home directory exposed. Downloading registry snapshots...",
-      "[ALERT] 0x33: Cloud cache index found. Syncing all private keys.",
-      "[ALERT] 0x44: Local firewall rules flushed. Incoming/outgoing traffic rerouted.",
-      "[ALERT] 0x55: System logging disabled. Events no longer recorded.",
-      "[ALERT] 0x66: Remote access maintained until manual shutdown or reboot.",
-      "[ALERT] 0x77: System integrity permanently compromised. No recovery path.",
-      "[ALERT] 0x88: Encrypted credentials decrypted. Wallets and vaults exposed.",
-      "[ALERT] 0x99: System will now remain unlocked until physical power loss.",
-      "[ALERT] 0x00: Final trace complete. Connection secured. Logging off..."
-    ];
-
-    const codeSnippets = [
-      "for i in range(len(secret_keys)):\n  print(f\"[ Decrypting key {i:02} ]\")",
-      "while True:\n  if sniff_packets() and validate_hash():\n    send_payload(remote_ip)",
-      "import sys, os\nos.system('rm -rf /home/* && chmod 777 /root')",
-      "connect('ssh', user='root', host='localhost', key=0xABCDEF0123456789')",
-      "# Payload installed.\n# System compromised.\n# Reboot required."
-    ];
-
     const terminal = document.getElementById("terminal");
-    const typed = document.getElementById("typed");
-    const fakeCode = document.getElementById("fake-code");
-    const prankArea = document.getElementById("prank-area");
-    const prankBtn = document.getElementById("prank-btn");
+    const promptText = "user@pc:~$ ";
+    const continuationText = "> ";
 
-    let lineIndex = 0;
-    let charIndex = 0;
-    let codeLineIndex = 0;
+    function detectOS() {
+      const userAgent = window.navigator.userAgent || "";
+      const platform = window.navigator.platform || "";
+      const touchPoints = window.navigator.maxTouchPoints || 0;
 
-    function typeLine() {
-      if (lineIndex < lines.length) {
-        const line = lines[lineIndex];
+      if (/iPad|iPhone|iPod/.test(userAgent) || (platform === "MacIntel" && touchPoints > 1)) {
+        return "iOS / iPadOS";
+      }
 
-        if (charIndex < line.length) {
-          typed.textContent = line.slice(0, charIndex + 1);
-          charIndex++;
-          setTimeout(typeLine, 30);
-        } else {
-          terminal.textContent += line + "\n";
-          lineIndex++;
-          charIndex = 0;
-          typed.textContent = "";
+      if (/Macintosh|Mac OS X/.test(userAgent) || /^Mac/.test(platform)) {
+        return "macOS";
+      }
 
-          if (lineIndex % 4 === 0 && codeLineIndex < codeSnippets.length) {
-            fakeCode.textContent += "\n" + codeSnippets[codeLineIndex] + "\n";
-            codeLineIndex++;
-          }
+      if (/Android/.test(userAgent)) {
+        return "Android";
+      }
 
-          setTimeout(typeLine, 400);
-        }
-      } else {
-        typed.textContent = "sudo shutdown --no-reboot";
-        setTimeout(() => {
-          prankArea.style.opacity = 1;
-          prankBtn.onclick = () => {
-            alert("Fake. Hit escape to exit fullscreen.");
-          };
-        }, 800);
+      if (/Windows NT/.test(userAgent) || /^Win/.test(platform)) {
+        return "Windows";
+      }
+
+      if (/CrOS/.test(userAgent)) {
+        return "ChromeOS";
+      }
+
+      if (/Linux/.test(userAgent) || /^Linux/.test(platform)) {
+        return "Linux";
+      }
+
+      return "Unknown";
+    }
+
+    const detectedOS = detectOS();
+
+    const timeline = [
+      {
+        input: ["whoami && date -u && printf 'Client OS: %s\\n' \"$CLIENT_OS\""],
+        output: [
+          "user",
+          "Mon Jun  1 14:18:03 UTC 2026",
+          `Client OS: ${detectedOS}`,
+          "2026-06-01T14:18:03Z INFO  shell initialized on pts/0"
+        ]
+      },
+      {
+        input: ["ip route show && arp -an"],
+        output: [
+          "default via 192.0.2.1 dev wlan0 proto dhcp metric 600",
+          "192.0.2.0/24 dev wlan0 proto kernel scope link src 192.0.2.22",
+          "? (192.0.2.1) at 00:16:3e:4b:91:a2 [ether] on wlan0",
+          "? (192.0.2.14) at 00:16:3e:21:cc:09 [ether] on wlan0",
+          "2026-06-01T14:18:06Z INFO  local route table cached"
+        ]
+      },
+      {
+        input: ["ping -c 3 192.0.2.14"],
+        output: [
+          "PING 192.0.2.14 (192.0.2.14) 56(84) bytes of data.",
+          "64 bytes from 192.0.2.14: icmp_seq=1 ttl=63 time=11.7 ms",
+          "64 bytes from 192.0.2.14: icmp_seq=2 ttl=63 time=11.9 ms",
+          "64 bytes from 192.0.2.14: icmp_seq=3 ttl=63 time=12.2 ms",
+          "--- 192.0.2.14 ping statistics ---",
+          "3 packets transmitted, 3 received, 0% packet loss, time 2004ms"
+        ]
+      },
+      {
+        input: ["nmap -Pn -sV --top-ports 40 192.0.2.14"],
+        output: [
+          "Starting Nmap 7.95 at 2026-06-01 14:18 UTC",
+          "Nmap scan report for lab-gateway.local (192.0.2.14)",
+          "Host is up (0.012s latency).",
+          "PORT     STATE    SERVICE      VERSION",
+          "22/tcp   open     ssh          OpenSSH 9.6p1",
+          "80/tcp   closed   http",
+          "443/tcp  open     ssl/http     nginx 1.24.0",
+          "3306/tcp filtered mysql",
+          "8080/tcp filtered http-proxy",
+          "Service detection performed. 2 services recognized.",
+          "2026-06-01T14:18:16Z WARN  scan policy limited to 40 common ports"
+        ]
+      },
+      {
+        input: ["mkdir -p /tmp/.session-cache && cat > /tmp/.session-cache/probe.py <<'PY'", "import base64, hashlib, json, time", "seed = 'lab-gateway.local:443:session-01'", "digest = hashlib.sha256(seed.encode()).hexdigest()", "print(json.dumps({", "    'target': '192.0.2.14',", "    'port': 443,", "    'fingerprint': digest[:32],", "    'nonce': base64.b16encode(digest.encode())[:24].decode(),", "    'checked_at': int(time.time())", "}, indent=2))", "PY"],
+        output: [
+          "2026-06-01T14:18:19Z INFO  wrote probe script to /tmp/.session-cache/probe.py",
+          "2026-06-01T14:18:19Z INFO  permissions set: rw-------"
+        ]
+      },
+      {
+        input: ["python3 /tmp/.session-cache/probe.py"],
+        output: [
+          "{",
+          "  \"target\": \"192.0.2.14\",",
+          "  \"port\": 443,",
+          "  \"fingerprint\": \"8d5e9ef4a780bd7cd34a251f5d4c7f33\",",
+          "  \"nonce\": \"386435653965663461373830\",",
+          "  \"checked_at\": 1780323501",
+          "}",
+          "2026-06-01T14:18:22Z OK    probe completed"
+        ]
+      },
+      {
+        input: ["ssh -o BatchMode=yes analyst@192.0.2.14 'id && uptime'"],
+        output: [
+          "analyst@192.0.2.14: Permission denied (publickey).",
+          "2026-06-01T14:18:25Z ERROR ssh handshake failed: no accepted key"
+        ]
+      },
+      {
+        input: ["cat > /tmp/.session-cache/collector.sh <<'SH'", "#!/usr/bin/env bash", "set -euo pipefail", "target=\"192.0.2.14\"", "ports=(22 80 443 8080)", "for port in \"${ports[@]}\"; do", "  printf '%s port=%s state=' \"$target\" \"$port\"", "  case \"$port\" in", "    22|443) echo open;;", "    80) echo closed;;", "    *) echo filtered;;", "  esac", "done", "SH"],
+        output: [
+          "2026-06-01T14:18:29Z INFO  collector staged",
+          "2026-06-01T14:18:29Z INFO  chmod +x /tmp/.session-cache/collector.sh"
+        ]
+      },
+      {
+        input: ["bash /tmp/.session-cache/collector.sh | tee /tmp/.session-cache/ports.log"],
+        output: [
+          "192.0.2.14 port=22 state=open",
+          "192.0.2.14 port=80 state=closed",
+          "192.0.2.14 port=443 state=open",
+          "192.0.2.14 port=8080 state=filtered",
+          "2026-06-01T14:18:33Z OK    wrote /tmp/.session-cache/ports.log"
+        ]
+      },
+      {
+        input: ["tail -n 6 /var/log/auth.log"],
+        output: [
+          "2026-06-01T14:18:34Z sshd[2219]: Failed publickey for analyst from 192.0.2.22 port 51730 ssh2",
+          "2026-06-01T14:18:35Z sshd[2221]: Connection closed by authenticating user analyst 192.0.2.22 port 51730",
+          "2026-06-01T14:18:37Z sudo[2232]: user : TTY=pts/0 ; PWD=/home/user ; COMMAND=/usr/bin/journalctl",
+          "2026-06-01T14:18:39Z kernel: audit: type=1400 apparmor=\"DENIED\" operation=\"open\" profile=\"snap-confine\"",
+          "2026-06-01T14:18:41Z sshd[2240]: Connection refused from 203.0.113.19 port 55214",
+          "2026-06-01T14:18:42Z INFO  auth log read window closed"
+        ]
+      },
+      {
+        input: ["journalctl -u ssh --since '2 minutes ago' --no-pager"],
+        output: [
+          "Jun 01 14:18:25 workstation-07 ssh[2207]: analyst@192.0.2.14: Permission denied (publickey).",
+          "Jun 01 14:18:26 workstation-07 ssh[2207]: Connection closed.",
+          "Jun 01 14:18:42 workstation-07 systemd[1]: ssh.service: Deactivated successfully.",
+          "2026-06-01T14:18:45Z WARN  insufficient privileges for extended journal fields"
+        ]
+      },
+      {
+        input: ["openssl s_client -connect 192.0.2.14:443 -servername lab-gateway.local </dev/null"],
+        output: [
+          "CONNECTED(00000003)",
+          "depth=0 CN = lab-gateway.local",
+          "verify error:num=18:self-signed certificate",
+          "verify return:1",
+          "SSL-Session:",
+          "    Protocol  : TLSv1.3",
+          "    Cipher    : TLS_AES_256_GCM_SHA384",
+          "    Verify return code: 18 (self-signed certificate)",
+          "2026-06-01T14:18:51Z WARN  certificate chain could not be verified"
+        ]
+      },
+      {
+        input: ["rm -r /tmp/.session-cache && exit"],
+        output: [
+          "2026-06-01T14:18:56Z INFO  temporary workspace removed",
+          "logout",
+          "Connection to lab-gateway.local closed.",
+          "",
+          "This was fake. It was only a local HTML animation.",
+          "No commands ran, no network requests were made, and nothing on this device was changed."
+        ],
+        reveal: true
+      }
+    ];
+
+    let activeLine = null;
+    let activeText = null;
+    let cursor = null;
+
+    function wait(ms) {
+      return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+
+    function randomDelay(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function scrollToBottom() {
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    function appendLine(text = "", className = "") {
+      const line = document.createElement("div");
+      if (className) {
+        line.className = className;
+      }
+      line.textContent = text;
+      terminal.appendChild(line);
+      scrollToBottom();
+      return line;
+    }
+
+    function outputClass(text, reveal = false) {
+      if (reveal) {
+        return "reveal";
+      }
+
+      if (text.includes("ERROR") || text.includes("Permission denied") || text.includes("DENIED")) {
+        return "error";
+      }
+
+      if (text.includes("WARN") || text.includes("filtered") || text.includes("self-signed")) {
+        return "warn";
+      }
+
+      if (text.includes("OK")) {
+        return "ok";
+      }
+
+      if (text.includes("INFO")) {
+        return "info";
+      }
+
+      if (/^(import|seed|digest|print|target=|ports=|for |  |done|set |#|PY|SH)/.test(text)) {
+        return "code";
+      }
+
+      return "";
+    }
+
+    function createInputLine(prefix) {
+      activeLine = document.createElement("div");
+
+      const prompt = document.createElement("span");
+      prompt.className = prefix === promptText ? "prompt" : "cont";
+      prompt.textContent = prefix;
+
+      activeText = document.createElement("span");
+      cursor = document.createElement("span");
+      cursor.id = "cursor";
+      cursor.setAttribute("aria-hidden", "true");
+
+      activeLine.append(prompt, activeText, cursor);
+      terminal.appendChild(activeLine);
+      scrollToBottom();
+    }
+
+    async function typeInput(text, prefix = promptText) {
+      createInputLine(prefix);
+      const isCodeInput = prefix !== promptText;
+
+      for (let index = 1; index <= text.length; index += 1) {
+        activeText.textContent = text.slice(0, index);
+        scrollToBottom();
+        await wait(isCodeInput ? randomDelay(2, 9) : randomDelay(7, 24));
+      }
+
+      activeLine.textContent = prefix + text;
+      activeLine = null;
+      activeText = null;
+      cursor = null;
+      scrollToBottom();
+      await wait(isCodeInput ? randomDelay(18, 70) : randomDelay(70, 180));
+    }
+
+    async function typeInputs(lines) {
+      for (let index = 0; index < lines.length; index += 1) {
+        await typeInput(lines[index], index === 0 ? promptText : continuationText);
       }
     }
 
-    setTimeout(typeLine, 800);
+    async function streamOutput(lines, reveal = false) {
+      for (const line of lines) {
+        appendLine(line, outputClass(line, reveal && line !== ""));
+        await wait(randomDelay(70, 260));
+      }
+    }
+
+    async function runTimeline() {
+      await wait(450);
+
+      for (const step of timeline) {
+        await typeInputs(step.input);
+        await streamOutput(step.output, Boolean(step.reveal));
+        await wait(randomDelay(220, 520));
+      }
+    }
+
+    runTimeline();
   </script>
 </body>
 </html>
