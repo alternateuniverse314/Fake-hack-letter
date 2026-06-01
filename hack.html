@@ -207,13 +207,13 @@
 
   .prank-btn {
     display: inline-block;
-    padding: 4px 8px;
+    padding: 1px 2px;
     background: rgba(50, 0, 0, 0.5);
-    color: rgba(255, 77, 77, 0.8);
-    border: 1px solid rgba(255, 77, 77, 0.5);
+    color: rgba(65, 65, 65, 0.8);
+    border: 1px solid rgba(54, 53, 53, 0.5);
     border-radius: 4px;
     font-family: var(--font);
-    font-size: 12px;
+    font-size: 6px;
     cursor: pointer;
     box-shadow: 0 0 4px rgba(255, 77, 77, 0.3);
     transition: all 0.2s ease;
@@ -274,8 +274,8 @@
       Nothing is actually happening. This is just HTML.
     </div>
 
-    <div class="alert-card" style="margin-top:16px;font-size:13px;">
-      <strong>NOTE:</strong> This page is a harmless visual prank. No scripts are running on your device.
+    <div class="alert-card" style="margin-top:8px;font-size:6px;">
+      Fake. Hit escape to exit fullscreen.
     </div>
   </div>
 
@@ -376,7 +376,7 @@
         setTimeout(() => {
           prankArea.style.opacity = 1;
           prankBtn.onclick = () => {
-            alert("Relax. This was just a fake hacker screen. It only changes what you see in the browser. Hit escape to exit fullscreen.");
+            alert("Fake. Hit escape to exit fullscreen.");
           };
         }, 800);
       }
